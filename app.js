@@ -15,7 +15,7 @@ const pool = new Pool({
     port: 5432,
 });
 
-var indexRouter = require('./routes/index')(pool);
+var indexRouter = require('./routes/Users/index')(pool);
 var usersRouter = require('./routes/users');
 
 app.use(logger('dev'));
@@ -24,9 +24,9 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
-app.use('/', indexRouter);
+app.use('/api/getUsers', indexRouter);
 app.use('/users', usersRouter);
 
-console.log('Server active on port 3000');
+console.log('Server listening on port 3000');
 
 module.exports = app;
