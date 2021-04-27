@@ -1,7 +1,9 @@
 var express = require('express');
 var router = express.Router();
 const bcrypt = require('bcrypt');
+const saltRounds = 10;
 const Users = require('../../models/Users');
+const Bcrypt = require('../../utility/bcrypt');
 
 module.exports = (db) => {
   /* api GET Users. */
@@ -24,33 +26,49 @@ module.exports = (db) => {
   /* api  POST new Users */
   router.post('/', (req,res) => {
     const {body} = req;
+    const {password, name, email} = body;
+    let hashPassword = null;
+    if(!password) return res.json({code:400, message:'password required'});
+    if(!name) return res.json({code:400, message:'name required'});
+    if(!email) return res.json({code:400, message:'email required'});
+
     Users.getSelectedEmail(db, body)
     .then(result => {
       if(result && result.length > 0){
         return res.json({
           code : 400,
           message : 'email already registered!',
-        })
+        });
       }
-    Users.post(db, body)
-    .then(()=>{
-      res.json({
-        code : 201,
-        message : 'success',
-      })
     })
-    .catch(()=>{
-      res.json({
+    .catch(error => {
+      return res.json({
         code : 500,
-        message: 'failed',
+        message: error,
       })
     })
-    })
-    .catch(()=>{
-      console.log('error Users getSelectedEmail');
-    })
-   
-  }) 
 
+    Bcrypt(password)
+      .then((hash => {
+        body.password = hash;
+         Users.post(db, body)
+          .then(()=>{
+            res.json({
+            code : 201,
+            message : 'success',
+          })
+        })
+        .catch(()=>{
+          res.json({
+            code : 500,
+            message: 'failed',
+          })
+        });
+      }))
+      .catch(err => {
+        hashPassword = err
+      });
+      
+  });
   return router;
 }
